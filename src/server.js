@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import pinoHttp from 'pino-http';
+import swaggerUi from 'swagger-ui-express';
+import { readFileSync } from 'node:fs';
 import 'dotenv/config';
 
 const PORT = process.env.PORT ?? 3000;
@@ -8,6 +10,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(pinoHttp());
+
+const openApiSpec = JSON.parse(
+  readFileSync(new URL('../docs/openapi.json', import.meta.url), 'utf8'),
+);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // GET-запит до кореневого маршруту "/"
 app.get('/notes', (req, res) => {

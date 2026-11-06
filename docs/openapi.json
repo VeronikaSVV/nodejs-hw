@@ -1,0 +1,171 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "nodejs-hw",
+    "description": "Express API for retrieving notes and testing error handling.",
+    "version": "1.0.0",
+    "license": {
+      "name": "ISC",
+      "url": "https://opensource.org/license/isc-license-txt"
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "security": [],
+  "tags": [
+    {
+      "name": "notes",
+      "description": "Note retrieval endpoints."
+    },
+    {
+      "name": "test",
+      "description": "Endpoint used to exercise server error handling."
+    }
+  ],
+  "paths": {
+    "/notes": {
+      "get": {
+        "tags": ["notes"],
+        "summary": "Retrieve all notes",
+        "description": "Returns a confirmation message; note data is not implemented yet.",
+        "operationId": "getNotes",
+        "responses": {
+          "200": {
+            "description": "The notes retrieval request succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "example": {
+                  "message": "Retrieved all notes"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "404": {
+            "$ref": "#/components/responses/RouteNotFound"
+          }
+        }
+      }
+    },
+    "/notes/{noteId}": {
+      "get": {
+        "tags": ["notes"],
+        "summary": "Retrieve a note by ID",
+        "description": "Returns a confirmation message containing the requested note ID.",
+        "operationId": "getNoteById",
+        "parameters": [
+          {
+            "name": "noteId",
+            "in": "path",
+            "required": true,
+            "description": "The note ID passed in the URL. The application does not validate its format.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The note retrieval request succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                },
+                "example": {
+                  "message": "Retrieved note with ID: 123"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "404": {
+            "$ref": "#/components/responses/RouteNotFound"
+          }
+        }
+      }
+    },
+    "/test-error": {
+      "get": {
+        "tags": ["test"],
+        "summary": "Trigger a simulated server error",
+        "description": "Throws a simulated error so the application error middleware returns a 500 response. The response message is the exception text outside production and a generic message in production.",
+        "operationId": "getTestError",
+        "responses": {
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          },
+          "404": {
+            "$ref": "#/components/responses/RouteNotFound"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MessageResponse": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Response message returned by the handler.",
+            "example": "Retrieved all notes"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Error text. In production, the global error handler returns a generic message.",
+            "example": "Simulated server error"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "RouteNotFound": {
+        "description": "The application-level fallback response when no route matches the request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "Route not found"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "An error was passed to the application-level error middleware.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "Simulated server error"
+            }
+          }
+        }
+      }
+    }
+  }
+}
