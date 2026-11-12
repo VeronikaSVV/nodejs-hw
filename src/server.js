@@ -1,58 +1,36 @@
 import express from 'express';
 import cors from 'cors';
-import pinoHttp from 'pino-http';
+import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'node:fs';
 import 'dotenv/config';
+import { connectMongoDB } from './db/connectMongoDB.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { notFoundHandler } from './middleware/notFoundHandler.js';
+import { logger } from './middleware/logger.js';
+import notesRoutes from './routes/notesRoutes.js';
 
 const PORT = process.env.PORT ?? 3000;
-const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(pinoHttp());
 
 const openApiSpec = JSON.parse(
   readFileSync(new URL('../docs/openapi.json', import.meta.url), 'utf8'),
 );
+
+const app = express();
+app.use(logger);
+app.use(helmet());
+app.use(express.json());
+app.use(cors({ origin: '*' }));
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
-// GET-запит до кореневого маршруту "/"
-app.get('/notes', (req, res) => {
-  res.status(200).json({
-    message: `Retrieved all notes`,
-  });
-});
+app.use(notesRoutes);
 
-// Конкретний за id
-app.get('/notes/:noteId', (req, res) => {
-  const { noteId } = req.params;
-  res.status(200).json({
-    message: `Retrieved note with ID: ${noteId}`,
-  });
-});
+app.use(notFoundHandler);
 
-// Маршрут для тестування middleware помилки
-app.get('/test-error', (req, res) => {
-  // Штучна помилка для прикладу
-  throw new Error(`Simulated server error`);
-});
+app.use(errorHandler);
 
-app.use((req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
-
-// Middleware для обробки помилок
-app.use((err, req, res, next) => {
-  console.error(err);
-
-  const isProd = process.env.NODE_ENV === 'production';
-
-  res.status(500).json({
-    message: isProd
-      ? 'Something went wrong. Please try again later.'
-      : err.message,
-  });
-});
+await connectMongoDB();
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
