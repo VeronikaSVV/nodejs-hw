@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import { errors } from 'celebrate';
 import swaggerUi from 'swagger-ui-express';
 import { readFileSync } from 'node:fs';
 import 'dotenv/config';
@@ -8,7 +9,6 @@ import { connectMongoDB } from './db/connectMongoDB.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { logger } from './middleware/logger.js';
-import { isCelebrateError } from 'celebrate';
 import notesRoutes from './routes/notesRoutes.js';
 
 const PORT = process.env.PORT ?? 3000;
@@ -27,17 +27,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 app.use(notesRoutes);
 
-app.use(notFoundHandler);
+app.use(errors());
 
-app.use((err, req, res, next) => {
-  if (isCelebrateError(err)) {
-    const details = [...err.details.values()]
-      .map(({ details: errors }) => errors.map(({ message }) => message))
-      .flat();
-    return res.status(400).json({ message: 'Validation error', errors: details });
-  }
-  next(err);
-});
+app.use(notFoundHandler);
 
 app.use(errorHandler);
 
